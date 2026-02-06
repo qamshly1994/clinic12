@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>إضافة مريض جديد</h3>
+
+<form method="POST">
+  <input name="name" placeholder="اسم المريض" required>
+  <textarea name="notes" placeholder="ملاحظات الجلسة"></textarea>
+  <button type="submit">إضافة</button>
+</form>
+
+<h3>سجل المرضى</h3>
+
+<table>
+  <tr>
+    <th>الاسم</th>
+    <th>الملاحظات</th>
+    <th>التاريخ</th>
+  </tr>
+
+  {% for patient in patients %}
+  <tr>
+    <td>{{ patient.name }}</td>
+    <td>{{ patient.notes }}</td>
+    <td>{{ patient.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+  </tr>
+  {% else %}
+  <tr>
+    <td colspan="3">لا يوجد مرضى</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}
