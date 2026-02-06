@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -27,22 +28,21 @@ class Doctor(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(120))
+    specialty = db.Column(db.String(120))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     patients = db.relationship("Patient", backref="doctor", lazy=True)
 
-
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.String(36), unique=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(120), nullable=False)
     notes = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     doctor_id = db.Column(db.Integer, db.ForeignKey("doctor.id"))
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return Doctor.query.get(int(user_id))
-
 
 # ===== Routes =====
 @app.route("/", methods=["GET", "POST"])
@@ -61,7 +61,6 @@ def login():
 
     return render_template("login.html")
 
-
 @app.route("/dashboard")
 def dashboard():
     if not current_user.is_authenticated:
@@ -73,28 +72,33 @@ def dashboard():
 
     return render_template("dashboard.html", doctor=current_user)
 
-
 @app.route("/patients", methods=["GET", "POST"])
 def patients():
     if not current_user.is_authenticated:
         return redirect(url_for("login"))
 
+    # البحث عن المريض
+    search_term = request.args.get('search')
+    if search_term:
+        patient_list = Patient.query.filter(
+            Patient.doctor_id == current_user.id,
+            (Patient.name.contains(search_term)) | (Patient.patient_id.contains(search_term))
+        ).order_by(Patient.created_at.desc()).all()
+    else:
+        patient_list = Patient.query.filter_by(
+            doctor_id=current_user.id
+        ).order_by(Patient.created_at.desc()).all()
+
     if request.method == "POST":
         name = request.form["name"]
         notes = request.form["notes"]
-
         patient = Patient(name=name, notes=notes, doctor=current_user)
         db.session.add(patient)
         db.session.commit()
-        flash("تم إضافة المريض بنجاح")
+        flash(f"تم إضافة المريض بنجاح. رقم المريض: {patient.patient_id}")
         return redirect(url_for("patients"))
 
-    patient_list = Patient.query.filter_by(
-        doctor_id=current_user.id
-    ).order_by(Patient.created_at.desc()).all()
-
     return render_template("patients.html", patients=patient_list)
-
 
 @app.route("/add_doctor", methods=["GET", "POST"])
 def add_doctor():
@@ -104,13 +108,14 @@ def add_doctor():
     if request.method == "POST":
         username = request.form["username"]
         full_name = request.form["full_name"]
+        specialty = request.form["specialty"]
         password = request.form["password"]
 
         if Doctor.query.filter_by(username=username).first():
             flash("اسم المستخدم موجود بالفعل")
         else:
             hashed = bcrypt.generate_password_hash(password).decode("utf-8")
-            doctor = Doctor(username=username, full_name=full_name, password_hash=hashed)
+            doctor = Doctor(username=username, full_name=full_name, specialty=specialty, password_hash=hashed)
             db.session.add(doctor)
             db.session.commit()
             flash("تم إضافة الدكتور بنجاح")
@@ -119,12 +124,10 @@ def add_doctor():
     doctors = Doctor.query.filter(Doctor.username != "admin").all()
     return render_template("add_doctor.html", doctors=doctors)
 
-
 @app.route("/logout")
 def logout():
     logout_user()
     return redirect(url_for("login"))
-
 
 # ===== Initialize DB (Flask 3 compatible) =====
 with app.app_context():
@@ -134,7 +137,6 @@ with app.app_context():
         admin = Doctor(username="admin", full_name="Admin", password_hash=password)
         db.session.add(admin)
         db.session.commit()
-
 
 if __name__ == "__main__":
     app.run(debug=True)
