@@ -4,31 +4,38 @@
 <h3>إضافة مريض جديد</h3>
 
 <form method="POST">
-  <input name="name" placeholder="اسم المريض" required>
-  <textarea name="notes" placeholder="ملاحظات الجلسة"></textarea>
-  <button type="submit">إضافة</button>
+    <input name="name" placeholder="اسم المريض" required>
+    <textarea name="notes" placeholder="ملاحظات الجلسة"></textarea>
+    <button type="submit">إضافة</button>
 </form>
 
 <h3>سجل المرضى</h3>
 
-<table>
-  <tr>
-    <th>الاسم</th>
-    <th>الملاحظات</th>
-    <th>التاريخ</th>
-  </tr>
+<form method="GET" style="margin-bottom:15px;">
+    <input name="search" placeholder="ابحث باسم المريض أو رقم المريض" value="{{ request.args.get('search','') }}">
+    <button type="submit">بحث</button>
+</form>
 
-  {% for patient in patients %}
-  <tr>
-    <td>{{ patient.name }}</td>
-    <td>{{ patient.notes }}</td>
-    <td>{{ patient.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-  </tr>
-  {% else %}
-  <tr>
-    <td colspan="3">لا يوجد مرضى</td>
-  </tr>
-  {% endfor %}
+<table>
+    <tr>
+        <th>رقم المريض</th>
+        <th>الاسم</th>
+        <th>الملاحظات</th>
+        <th>التاريخ</th>
+    </tr>
+
+    {% for patient in patients %}
+    <tr>
+        <td>{{ patient.patient_id }}</td>
+        <td>{{ patient.name }}</td>
+        <td>{{ patient.notes }}</td>
+        <td>{{ patient.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="4">لا يوجد مرضى</td>
+    </tr>
+    {% endfor %}
 </table>
 
 {% endblock %}
