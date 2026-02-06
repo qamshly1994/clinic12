@@ -126,9 +126,8 @@ def logout():
     return redirect(url_for("login"))
 
 
-# ===== First run =====
-@app.before_first_request
-def create_tables():
+# ===== Initialize DB (Flask 3 compatible) =====
+with app.app_context():
     db.create_all()
     if not Doctor.query.filter_by(username="admin").first():
         password = bcrypt.generate_password_hash("admin123").decode("utf-8")
@@ -139,4 +138,3 @@ def create_tables():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
