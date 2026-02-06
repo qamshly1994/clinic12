@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_bcrypt import Bcrypt
 
-app = Flask(_name_)
+app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
 
 # ===== Database =====
@@ -137,5 +137,6 @@ def create_tables():
         db.session.commit()
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     app.run(debug=True)
+
