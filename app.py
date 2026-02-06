@@ -77,7 +77,6 @@ def patients():
     if not current_user.is_authenticated:
         return redirect(url_for("login"))
 
-    # البحث عن المريض
     search_term = request.args.get('search')
     if search_term:
         patient_list = Patient.query.filter(
@@ -129,7 +128,7 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
-# ===== Initialize DB (Flask 3 compatible) =====
+# ===== Initialize DB =====
 with app.app_context():
     db.create_all()
     if not Doctor.query.filter_by(username="admin").first():
